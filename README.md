@@ -6,6 +6,9 @@ VAST Challenge 2026 Mini-Challenge 1 — TU Munich Data Visualization course.
 ## Live demo
 https://syedr-qamar.github.io/TUM-Qamar-MC1/
 
+## Video Explanation
+A short video explaining the visual analytical tool can be found at: https://youtu.be/1Fn24SMKndo
+
 ## Running locally
 Because the data is loaded via `fetch()`, you need a local server:
 

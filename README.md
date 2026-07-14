@@ -10,10 +10,10 @@ https://syedr-qamar.github.io/TUM-Qamar-MC1/
 Because the data is loaded via `fetch()`, you need a local server:
 
 bash instructions:
-git clone https://github.com/syedr-qamar/TUM-Qamar-MC1.git
-cd TUM-Qamar-MC1
-python3 -m http.server 8000
-# then open http://localhost:8000 on any browser.
+- git clone https://github.com/syedr-qamar/TUM-Qamar-MC1.git
+- cd TUM-Qamar-MC1
+- python3 -m http.server 8000
+- # then open http://localhost:8000 on any browser.
 
 
 ## Structure

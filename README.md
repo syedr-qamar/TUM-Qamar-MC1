@@ -4,16 +4,18 @@ Visual analytics system for investigating the TenantThread embargo breach.
 VAST Challenge 2026 Mini-Challenge 1 — TU Munich Data Visualization course.
 
 ## Live demo
-https://YOUR-USERNAME.github.io/harborcrest/
+https://syedr-qamar.github.io/TUM-Qamar-MC1/
 
 ## Running locally
 Because the data is loaded via `fetch()`, you need a local server:
 
-```bash
-cd harborcrest
+\`\`\`bash
+git clone https://github.com/syedr-qamar/TUM-Qamar-MC1.git
+cd TUM-Qamar-MC1
 python3 -m http.server 8000
 # then open http://localhost:8000
-```
+\`\`\`
+
 
 ## Structure
 - `index.html` — layout and CSS

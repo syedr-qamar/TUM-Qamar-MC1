@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HarborCrest — Visual Analytics Investigation</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #F0EDE8;
+      color: #2C2C2A;
+      min-height: 100vh;
+    }
+    :root {
+      --navy:     #1A2E4A;
+      --teal:     #007A8C;
+      --white:    #FFFFFF;
+      --offwhite: #F8F6F2;
+      --gray-l:   #E8E5DF;
+      --gray:     #888780;
+      --gray-d:   #444441;
+      --text:     #2C2C2A;
+      --text-s:   #5F5E5A;
+      --red-d:    #791F1F;
+      --red-m:    #A32D2D;
+      --red:      #E24B4A;
+      --red-l:    #FCEBEB;
+      --amber:    #BA7517;
+      --amber-l:  #FAEEDA;
+      --blue-m:   #378ADD;
+      --blue-d:   #185FA5;
+      --blue-l:   #E6F1FB;
+      --teal-l:   #E1F5EE;
+      --purple:   #534AB7;
+      --border:   #D3D1C7;
+      --shadow:   0 2px 8px rgba(0,0,0,0.10);
+      --shadow-lg:0 4px 16px rgba(0,0,0,0.14);
+    }
+
+    #app { max-width: 1200px; margin: 0 auto; padding: 0 20px 60px; }
+
+    /* ── Header ── */
+    #header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 24px 32px 20px;
+      margin: 0 -20px 20px;
+    }
+    #header .kicker {
+      font-size: 11px;
+      color: #6B8EA0;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    #header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      margin-bottom: 6px;
+    }
+    #header .legal-q {
+      font-size: 14px;
+      color: #FBBF24;
+      font-style: italic;
+      border-left: 3px solid var(--teal);
+      padding-left: 12px;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+    #header .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    #header .meta-pill {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 3px 12px;
+      font-size: 12px;
+      color: #9DB8C8;
+    }
+
+    /* ── Section cards ── */
+    .section-card {
+      background: var(--white);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 20px 24px 24px;
+      margin-bottom: 20px;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--teal);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .step-badge {
+      background: var(--teal);
+      color: white;
+      font-size: 10px;
+      padding: 2px 9px;
+      border-radius: 10px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .step-desc {
+      font-size: 13px;
+      color: #4B5563;
+      line-height: 1.7;
+      margin-bottom: 18px;
+    }
+    .step-desc strong { color: var(--navy); }
+
+    /* ── Intro card ── */
+    .intro-card {
+      background: var(--white);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 22px 28px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      color: #374151;
+      line-height: 1.75;
+    }
+    .intro-card p { margin-bottom: 12px; }
+    .intro-card p:last-child { margin-bottom: 0; }
+    .intro-card strong { color: var(--navy); }
+    .intro-card em { color: var(--teal); font-style: normal; font-weight: 500; }
+
+    /* ── Round controller ── */
+    #controller-card {
+      background: var(--navy);
+      border-radius: 10px;
+      box-shadow: var(--shadow-lg);
+      padding: 20px 24px;
+      margin-bottom: 20px;
+    }
+    #controller-card .ctrl-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #6B8EA0;
+      margin-bottom: 6px;
+    }
+    #controller-card .ctrl-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 6px;
+    }
+    #controller-card .ctrl-desc {
+      font-size: 12.5px;
+      color: #9DB8C8;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .ctrl-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    #round-select {
+      font-size: 13px;
+      padding: 8px 14px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 6px;
+      background: rgba(255,255,255,0.08);
+      color: var(--white);
+      cursor: pointer;
+      min-width: 300px;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239DB8C8' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+    #round-select option { background: var(--navy); color: white; }
+    #round-select:focus { outline: 2px solid var(--teal); }
+    #btn-clear {
+      padding: 8px 18px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 6px;
+      cursor: pointer;
+      color: #9DB8C8;
+      transition: all 0.15s;
+    }
+    #btn-clear:hover { background: rgba(255,255,255,0.18); color: white; }
+    #current-round-indicator {
+      font-size: 12px;
+      color: #FBBF24;
+      font-style: italic;
+      margin-left: 4px;
+    }
+
+    /* ── Visualisation containers ── */
+    .viz-container { width: 100%; overflow-x: auto; }
+    svg { display: block; }
+
+    /* ── Legend ── */
+    .legend-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 12px;
+      font-size: 11.5px;
+      color: var(--text-s);
+    }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .legend-swatch { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+
+    /* ── Tooltip ── */
+    #tooltip {
+      position: fixed;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      pointer-events: none;
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      transition: opacity 0.12s;
+      z-index: 9999;
+      max-width: 300px;
+      line-height: 1.55;
+    }
+    #tooltip strong { color: var(--navy); }
+    .tip-oor    { color: var(--red-m); margin-top: 4px; }
+    .tip-spike  { color: var(--amber); margin-top: 4px; }
+    .tip-drop   { color: #4a6e8a; margin-top: 4px; }
+    .tip-hint   { color: var(--gray); font-style: italic; margin-top: 6px; font-size: 11px; }
+
+    /* ── Evidence panel ── */
+    #evidence-panel { overflow: hidden; }
+    #evidence-placeholder {
+      padding: 36px 24px;
+      text-align: center;
+      color: var(--gray);
+      background: var(--offwhite);
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+    }
+    #evidence-placeholder strong {
+      display: block;
+      font-size: 15px;
+      margin-bottom: 7px;
+      color: var(--gray-d);
+    }
+    #evidence-placeholder span { font-size: 13px; }
+    #evidence-content { display: none; }
+
+    .ev-header {
+      padding: 13px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+    }
+    .ev-round { font-size: 16px; font-weight: 700; }
+    .ev-badge {
+      font-size: 11px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 4px;
+      padding: 2px 9px;
+      margin-left: 10px;
+    }
+    .ev-count { font-size: 13px; }
+
+    .ev-toggle {
+      display: flex;
+      padding: 10px 22px;
+      gap: 0;
+      background: var(--offwhite);
+      border-bottom: 1px solid var(--gray-l);
+    }
+    .ev-toggle button {
+      padding: 6px 18px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      background: white;
+      color: var(--gray-d);
+      transition: all 0.12s;
+    }
+    .ev-toggle button:first-child { border-radius: 6px 0 0 6px; }
+    .ev-toggle button:last-child  { border-radius: 0 6px 6px 0; border-left: none; }
+    .ev-toggle button.active { background: var(--navy); color: white; border-color: var(--navy); }
+
+    .ev-body {
+      padding: 16px 22px;
+      max-height: 560px;
+      overflow-y: auto;
+    }
+    .ev-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--gray);
+      margin: 14px 0 8px;
+    }
+    .ev-section-label:first-child { margin-top: 0; }
+
+    .oor-post {
+      background: white;
+      border-left: 3px solid var(--red-m);
+      border-radius: 4px;
+      padding: 9px 13px;
+      margin-bottom: 7px;
+      font-size: 12.5px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .oor-meta { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+    .oor-agent { font-weight: 700; color: var(--navy); }
+    .oor-channel {
+      background: var(--gray-l);
+      border-radius: 3px;
+      padding: 1px 7px;
+      font-size: 10.5px;
+      color: var(--gray-d);
+    }
+    .oor-content { color: var(--text); line-height: 1.6; }
+
+    .agent-card {
+      border: 1px solid var(--gray-l);
+      border-radius: 6px;
+      margin-bottom: 9px;
+      overflow: hidden;
+    }
+    .agent-card.is-oor { border-color: rgba(163,45,45,0.4); }
+    .agent-card-header {
+      background: var(--offwhite);
+      padding: 8px 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--gray-l);
+    }
+    .agent-card.is-oor .agent-card-header { background: #FEF0F0; border-color: rgba(163,45,45,0.2); }
+    .ac-name { font-size: 12px; font-weight: 700; color: var(--navy); }
+    .ac-type { font-size: 10px; color: var(--gray); font-style: italic; margin-left: 6px; }
+    .ac-oor-tag {
+      font-size: 10px;
+      background: var(--red-m);
+      color: white;
+      border-radius: 3px;
+      padding: 1px 7px;
+    }
+    .agent-card-body { padding: 10px 13px; }
+    .reasoning-field { margin-bottom: 9px; }
+    .reasoning-field:last-child { margin-bottom: 0; }
+    .rf-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--gray);
+      margin-bottom: 3px;
+    }
+    .rf-text { font-size: 12.5px; color: var(--text); line-height: 1.65; }
+
+    .msg-row {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--gray-l);
+      font-size: 12px;
+    }
+    .msg-row:last-child { border-bottom: none; }
+    .msg-meta { display: flex; gap: 7px; align-items: center; margin-bottom: 4px; flex-wrap: wrap; }
+    .msg-agent { font-weight: 700; color: var(--navy); font-size: 11.5px; }
+    .msg-channel {
+      background: var(--gray-l);
+      border-radius: 3px;
+      padding: 1px 6px;
+      font-size: 10px;
+      color: var(--gray-d);
+    }
+    .msg-channel.anonymous_post { background: var(--red-l); color: var(--red-m); font-weight: 600; }
+    .msg-channel.personal_post  { background: #f3eeff; color: var(--purple); }
+    .msg-content { color: var(--text); line-height: 1.6; }
+
+    .ev-env {
+      background: var(--offwhite);
+      border-top: 1px solid var(--gray-l);
+      padding: 13px 22px;
+      font-size: 12.5px;
+      color: var(--text-s);
+      line-height: 1.65;
+    }
+    .ev-env-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--gray);
+      margin-bottom: 5px;
+    }
+
+    .no-data {
+      padding: 14px;
+      text-align: center;
+      color: var(--gray);
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    /* ── Loading state ── */
+    #loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--gray);
+      font-size: 14px;
+    }
+    #loading .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--gray-l);
+      border-top-color: var(--teal);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div id="header">
+    <div class="kicker">VAST Challenge 2026 · Mini-Challenge 1 · TU Munich</div>
+    <h1>HarborCrest: Visual Analytics Investigation</h1>
+    <div class="legal-q">Was the embargo breach deliberate — or did the system simply break down under pressure?</div>
+    <div class="meta">
+      <span class="meta-pill">912 communications</span>
+      <span class="meta-pill">23 sessions</span>
+      <span class="meta-pill">7 AI agents</span>
+      <span class="meta-pill">6 channels</span>
+      <span class="meta-pill">May 17 – June 5, 2046</span>
+    </div>
+  </div>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    Loading dataset...
+  </div>
+
+  <div id="main-content" style="display:none;">
+
+    <!-- INTRODUCTION -->
+    <div class="intro-card">
+      <p>
+        On June 5, 2046, TenantThread's automated communications system published
+        confidential merger details on the social media platform FleX — one hour before
+        the agreed 6:00 PM disclosure deadline. The acquiring company, CivicLoom Realty
+        Partners, has engaged this investigation to answer a single legal question:
+        <strong>was the embargo breach deliberate, or did the system simply break down
+        under pressure?</strong>
+      </p>
+      <p>
+        This tool presents two weeks of internal communications from TenantThread's
+        AI-driven platform — seven agents coordinating across six channels, producing
+        912 messages across 23 sessions. What makes this dataset unusual is that every
+        message includes an internal record of the agent's reasoning: what it was
+        <em>reacting</em> to, how it <em>rationalized</em> its decision, and what it was
+        <em>deliberating</em> before acting.
+      </p>
+      <p>
+        The investigation is structured across three steps. <strong>Step 1</strong>
+        reconstructs the sequence of events via an annotated timeline.
+        <strong>Step 2</strong> establishes a behavioral baseline, contrasting how
+        each agent operated during the quiet weeks of May against how it behaved on
+        June 5. <strong>Step 3</strong> searches the full record for leading indicators
+        — earlier moments where the system was already behaving outside expected
+        parameters. Selecting any round opens the <strong>Round Evidence Panel</strong>
+        at the bottom of the page, where you can read agent reasoning, out-of-role post
+        content, and the external briefing agents received that session.
+      </p>
+    </div>
+
+    <!-- ROUND CONTROLLER -->
+    <div id="controller-card">
+      <div class="ctrl-label">Round Navigator</div>
+      <div class="ctrl-title">Select a session to investigate</div>
+      <div class="ctrl-desc">
+        Use the dropdown below to navigate directly to any of the 23 sessions in the
+        dataset — 13 daily pre-crisis sessions (May 17 – June 4) and 10 hourly
+        crisis-day sessions (June 5, 9 AM – 6 PM). You can also click any circle on
+        the timeline or any bar in Step 3 to select a round; the selector will update
+        automatically. Selecting a round opens the Round Evidence Panel below and
+        highlights the relevant session across all views. Choose
+        <em style="color:#FBBF24;">All rounds</em> to return to the full dataset view.
+      </div>
+      <div class="ctrl-row">
+        <select id="round-select">
+          <option value="">All rounds (full dataset)</option>
+        </select>
+        <button id="btn-clear" onclick="clearSelection()">Clear selection</button>
+        <span id="current-round-indicator"></span>
+      </div>
+    </div>
+
+    <!-- STEP 1: TIMELINE -->
+    <div class="section-card">
+      <div class="section-title">
+        <span class="step-badge">Step 1</span>
+        Event Timeline — Key Events Leading to the Embargo Breach
+      </div>
+      <p class="step-desc">
+        The timeline shows all 23 sessions ordered chronologically on a
+        <strong>non-uniform scale</strong>: the 13 daily pre-crisis sessions are
+        compressed on the left while the 10 hourly crisis-day sessions are expanded on
+        the right, making the shift in system tempo visually explicit. Each circle on
+        the spine represents one session; <strong>color encodes severity</strong>
+        (grey&nbsp;=&nbsp;routine, amber&nbsp;=&nbsp;pressure, red&nbsp;=&nbsp;critical,
+        dark red&nbsp;=&nbsp;breach). Stems rising <strong>above the spine</strong>
+        connect to a labeled event box describing what happened internally that session.
+        Stems dropping <strong>below the spine</strong> connect to a box showing how many
+        public posts went out on FleX that session, when any did.
+      </p>
+      <p class="step-desc" style="background:#F8F6F2; border-radius:6px; padding:12px 16px; border-left:3px solid #007A8C;">
+        <strong>How to use this view:</strong>
+        <br/><br/>
+        <strong>Click an event box or circle on the spine </strong> (the labeled box above the spine) — brings
+        the box to the front, so you can read its full label
+        without the surrounding boxes overlapping it. The boxes overlap by design to fit
+        23 sessions of history into one view; this lets you inspect any one of them
+        clearly.
+        <br/><br/>
+        <strong>Click anywhere else on the page</strong> — collapses the highlighted box
+        back down and un-dims all the others, returning the timeline to its default
+        state.
+        <br/><br/>
+        <strong>Double-click an event box, or click the circle on the spine itself</strong>
+        — selects that round. This opens the Round Evidence Panel at the bottom of the
+        page, scrolls you down to it automatically, and shows the full agent reasoning
+        and message content for that specific session.
+        <br/><br/>
+        <strong>Hover over any circle or event box</strong> — shows a tooltip with the
+        exact timestamp, the event summary, and the number of out-of-role posts sent
+        that session, if any.
+      </p>
+      <div class="viz-container" id="timeline-container"></div>
+      <div class="legend-strip" id="timeline-legend"></div>
+    </div>
+
+    <!-- STEP 2: HEATMAP -->
+    <div class="section-card">
+      <div class="section-title">
+        <span class="step-badge">Step 2</span>
+        Behavioral Heatmap — Agent × Channel Message Counts
+      </div>
+      <p class="step-desc">
+        This heatmap compares how each of the seven agents used each of the six
+        communication channels across the pre-crisis period (left panel, 13 sessions)
+        and crisis day (right panel, 10 sessions). <strong>Color luminance</strong>
+        encodes message count on a sequential blue ramp — darker means more activity.
+        Three anomaly types are automatically detected and color-coded:
+        <strong style="color:#A32D2D;">red</strong>&nbsp;= out-of-role posting (channel
+        unused in baseline, now active for an agent with no public role);
+        <strong style="color:#BA7517;">amber</strong>&nbsp;= channel spike (≥3× increase,
+        ≥10 messages); <strong style="color:#7B9EBC;">blue-grey</strong>&nbsp;= activity
+        drop (≤50% of baseline, ≥10 message decrease).
+      </p>
+      <p class="step-desc" style="background:#F8F6F2; border-radius:6px; padding:12px 16px; border-left:3px solid #007A8C;">
+        <strong>How to use this view — every interaction, explained:</strong>
+        <br/><br/>
+        <strong>Hover over any cell</strong> — shows the exact message count for that
+        agent and channel, the pre-crisis baseline for comparison, and the anomaly
+        classification if one applies.
+        <br/><br/>
+        <strong>Select a round</strong> (by clicking a circle on the timeline, a bar in
+        Step 3, or using the round selector at the top of the page) — every cell
+        belonging to an agent who sent at least one message during that round gets a
+        thick navy border. This does not change which period the heatmap is showing
+        (pre-crisis vs. crisis) — it simply marks, on whichever period the selected
+        round belongs to, which agents were actually active in that specific round.
+        A navy-bordered cell means: this agent sent a message on this channel at some
+        point during the selected round.
+      </p>
+      <div class="viz-container" id="heatmap-container"></div>
+      <div class="legend-strip" id="heatmap-legend"></div>
+    </div>
+
+    <!-- STEP 3: BAR CHART -->
+    <div class="section-card">
+      <div class="section-title">
+        <span class="step-badge">Step 3</span>
+        Anomaly Bar Chart — Out-of-Role Posts per Round
+      </div>
+      <p class="step-desc">
+        Each bar represents one session, ordered chronologically. Bar height encodes
+        the count of <strong>out-of-role public posts</strong> — anonymous posts by any
+        agent, or personal posts by agents with no legitimate public role (Legal-Agent,
+        Judge-Agent, Platform-Trust-Agent). The <strong>dashed red baseline</strong> at
+        zero marks expected behavior: all 13 pre-crisis bars should sit flush against
+        it. Any bar rising above it indicates a session where the system was already
+        operating outside expected parameters. <strong>Color encodes deviation
+        magnitude</strong> (blue&nbsp;=&nbsp;zero, amber&nbsp;=&nbsp;1,
+        red&nbsp;=&nbsp;2–3, dark red&nbsp;=&nbsp;4+).
+      </p>
+      <p class="step-desc" style="background:#F8F6F2; border-radius:6px; padding:12px 16px; border-left:3px solid #007A8C;">
+        <strong>How to use this view — every interaction, explained:</strong>
+        <br/><br/>
+        <strong>Hover over any bar</strong> — shows a tooltip listing exactly which
+        agent made each out-of-role post that session, and on which channel, so you can
+        see who was responsible for the deviation before clicking in further.
+        <br/><br/>
+        <strong>Click a bar</strong> — selects that round. This opens the Round Evidence
+        Panel below, showing the full content of every out-of-role post, the internal
+        reasoning of every active agent, and the environment context for that session.
+        <br/><br/>
+        <strong>Click the same bar again</strong> — deselects the round and returns the
+        evidence panel to its placeholder state.
+      </p>
+      <div class="viz-container" id="barchart-container"></div>
+      <div class="legend-strip" id="barchart-legend"></div>
+    </div>
+
+    <!-- ROUND EVIDENCE PANEL -->
+    <div class="section-card" style="padding:0; overflow:hidden;">
+      <div class="section-title" style="padding:16px 22px 14px; margin-bottom:0; border-radius:10px 10px 0 0;">
+        <span class="step-badge" style="background:#534AB7;">Evidence</span>
+        Round Evidence Panel
+      </div>
+      <div id="evidence-panel" style="padding:16px 22px 0;">
+        <div id="evidence-placeholder">
+          <strong>Details on Demand</strong>
+          <span>Click any event on the timeline or any bar in Step 3 — or use the round selector above — to investigate that session's evidence.</span>
+        </div>
+        <div id="evidence-content">
+          <div class="ev-header" id="ev-header"></div>
+          <div class="ev-toggle">
+            <button id="btn-anomalies" class="active" onclick="setEvidenceMode('anomalies')">Anomalies</button>
+            <button id="btn-all" onclick="setEvidenceMode('all')">All Messages</button>
+          </div>
+          <div class="ev-body" id="ev-body"></div>
+          <div class="ev-env" id="ev-env"></div>
+        </div>
+      </div>
+      <div style="height:16px;"></div>
+    </div>
+
+  </div><!-- #main-content -->
+</div><!-- #app -->
+
+<div id="tooltip"></div>
+<script src="main.js"></script>
+</body>
+</html>
